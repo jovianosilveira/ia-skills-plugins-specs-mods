@@ -1,0 +1,12 @@
+{
+  "name": "eleazar-esquenta-secao",
+  "version": "0.2.0",
+  "description": "Eleazar, o esquenta-sessão: mantém o cache da conversa quente nas pausas, mostra o estado embaixo da caixa de mensagem (no app, na linha de status ao lado do modelo) com a contagem até o próximo aquecimento, e avisa o preço antes de uma mensagem com o cache frio. Ligado em toda sessão; /esquentador desligar desliga. Feito a partir do cache-tax de Karan Bansal (e4940af). Aquecer usa requisições ao modelo e custa tokens.",
+  "author": {
+    "name": "Joviano Silveira",
+    "url": "https://www.joviano.com/vitrine/mentoria-fabrica"
+  },
+  "homepage": "https://github.com/jovianosilveira/ia-skills-plugins-specs-mods/tree/main/eleazar-esquenta-secao",
+  "repository": "https://github.com/jovianosilveira/ia-skills-plugins-specs-mods",
+  "license": "MIT"
+}

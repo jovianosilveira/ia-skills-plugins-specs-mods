@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ia-skills-plugins-specs-mods",
+  "description": "Skills, plugins, specs e mods para o Claude Code, em português do Brasil. Uma amostra do que curamos, adaptamos e criamos na Mentoria Fábrica de Apps.",
+  "owner": {
+    "name": "Joviano Silveira",
+    "url": "https://www.joviano.com/vitrine/mentoria-fabrica"
+  },
+  "plugins": [
+    {
+      "name": "eleazar-esquenta-secao",
+      "description": "Mantém o cache da conversa quente nas pausas, mostra o estado embaixo da caixa de mensagem com a contagem até o próximo aquecimento e avisa o preço antes de uma mensagem com o cache frio.",
+      "source": "./eleazar-esquenta-secao",
+      "category": "productivity"
+    }
+  ]
+}
