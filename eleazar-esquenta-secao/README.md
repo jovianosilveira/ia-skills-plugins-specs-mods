@@ -168,7 +168,7 @@ claude plugin uninstall eleazar-esquenta-secao
 
 ## Por que Eleazar
 
-No método GENESIS, da Mentoria Fábrica de Apps, os ajudantes levam nomes de personagens bíblicos: Arão faz os vídeos, José planeja, Salomão monta o time.
+No método GENESIS, da [Mentoria Fábrica de Apps](https://www.joviano.com/vitrine/mentoria-fabrica), os ajudantes levam nomes de personagens bíblicos: Arão faz os vídeos, José planeja, Salomão monta o time.
 
 Eleazar era filho de Arão e sacerdote, e cuidava do azeite da luz do santuário (Números 4:16). A regra do altar, em Levítico 6:12-13, é que o fogo tinha que arder sem parar: toda manhã o sacerdote punha lenha nele, para que nunca se apagasse.
 
