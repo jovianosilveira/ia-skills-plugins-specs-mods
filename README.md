@@ -22,8 +22,6 @@ claude plugin install <projeto> --marketplace jovianosilveira/ia-skills-plugins-
 
 O README de cada projeto traz o passo a passo completo.
 
----
-
 <!-- BIO:INICIO: vem de autor/BIO.md pelo ferramentas/carimbar_bio.py; edite lá, não aqui -->
 ## Quem fez
 

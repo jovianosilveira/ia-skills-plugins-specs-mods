@@ -20,7 +20,8 @@ RAIZ = pathlib.Path(__file__).resolve().parent.parent
 BIO = RAIZ / 'autor' / 'BIO.md'
 INICIO = '<!-- BIO:INICIO: vem de autor/BIO.md pelo ferramentas/carimbar_bio.py; edite lá, não aqui -->'
 FIM = '<!-- BIO:FIM -->'
-BLOCO = re.compile(r'<!-- BIO:INICIO.*?<!-- BIO:FIM -->', re.S)
+# A linha "---" que as primeiras versões punham antes da bio sai junto: o título "Quem fez" já traz o seu sublinhado.
+BLOCO = re.compile(r'(?:^---\n+)?<!-- BIO:INICIO.*?<!-- BIO:FIM -->', re.S | re.M)
 # Pastas que não são projeto: o próprio git, dependências, os tipos que o Claude Code gera e as pastas desta ferramenta.
 PULAR = {'.git', 'node_modules', '.claude-plugin', 'autor', 'ferramentas'}
 
@@ -34,7 +35,7 @@ def readmes(pasta: pathlib.Path):
 def carimbar(texto: str, bloco: str) -> str:
     if BLOCO.search(texto):
         return BLOCO.sub(lambda _: bloco, texto, count=1)
-    return texto.rstrip('\n') + '\n\n---\n\n' + bloco + '\n'
+    return texto.rstrip('\n') + '\n\n' + bloco + '\n'
 
 
 def main() -> int:

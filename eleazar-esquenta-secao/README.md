@@ -196,8 +196,6 @@ A mod parte do [cache-tax](https://github.com/karanb192/cache-tax), de Karan Ban
 
 Os testes do original continuam aqui, adaptados ao português, e cada correção e adaptação ganhou testes próprios: são 169 ao todo. Para rodar: `claude plugin test eleazar-esquenta-secao`.
 
----
-
 <!-- BIO:INICIO: vem de autor/BIO.md pelo ferramentas/carimbar_bio.py; edite lá, não aqui -->
 ## Quem fez
 
