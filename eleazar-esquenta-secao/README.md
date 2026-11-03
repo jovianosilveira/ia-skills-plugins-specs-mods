@@ -43,6 +43,10 @@ A mod faz três coisas.
 
 No app desktop o estado fica na linha de status, à direita, ao lado do nome do modelo. No terminal, fica na linha de dica, à esquerda.
 
+Assim fica no app desktop, logo depois de uma resposta:
+
+![Caixa de mensagem do Claude Code no app desktop; embaixo, ao lado do modelo, a linha "eleazar-esquenta-secao: quente, reaquece em 46 min"](imagens/status-no-app.png)
+
 **3. Avisa antes da mensagem cara.** Se o cache esfriou e reescrever vai custar US$ 1 ou mais, a mensagem vai com uma linha dizendo quanto ela vai custar e quanto custaria com o cache quente. Se preferir, a mod pode segurar a mensagem uma vez para você decidir: aí basta mandar de novo para seguir.
 
 ## Bê-á-bá: instalar
