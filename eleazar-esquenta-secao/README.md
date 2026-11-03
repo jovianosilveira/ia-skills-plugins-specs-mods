@@ -43,11 +43,21 @@ A mod faz três coisas.
 
 No app desktop o estado fica na linha de status, à direita, ao lado do nome do modelo. No terminal, fica na linha de dica, à esquerda.
 
-Assim fica no app desktop, logo depois de uma resposta:
+Assim fica no app desktop, logo depois de uma resposta (print real):
 
 ![Caixa de mensagem do Claude Code no app desktop; embaixo, ao lado do modelo, a linha "eleazar-esquenta-secao: quente, reaquece em 46 min"](imagens/status-no-app.png)
 
 **3. Avisa antes da mensagem cara.** Se o cache esfriou e reescrever vai custar US$ 1 ou mais, a mensagem vai com uma linha dizendo quanto ela vai custar e quanto custaria com o cache quente. Se preferir, a mod pode segurar a mensagem uma vez para você decidir: aí basta mandar de novo para seguir.
+
+As duas imagens abaixo são simulações, montadas com o texto exato que a mod escreve numa conversa de 200 mil tokens no Fable 5.1, depois de uma noite parada.
+
+Antes de mandar, a linha de status já mostra o preço:
+
+![Simulação: a caixa de mensagem com "continua" digitado e, embaixo, a linha "cache frio, a próxima mensagem custa US$ 4,01 para reaquecer"](imagens/simulacao-cache-frio.png)
+
+Ao mandar, aparece o aviso com a conta:
+
+![Simulação: a mensagem "continua" e, embaixo, o aviso da mod com o custo da reescrita e o custo com o cache quente](imagens/simulacao-aviso.png)
 
 ## Bê-á-bá: instalar
 
@@ -77,6 +87,10 @@ Se você tiver o `cache-tax` original instalado, desinstale: os dois juntos dão
 2. Mande uma mensagem qualquer. Quando a resposta chegar, aparece **🔥 quente · reaquece em 50 min**, e a contagem desce sozinha.
 3. Pode sair. Se você ficar mais de 50 minutos parado, a mod aquece o cache e a contagem recomeça.
 4. Quer ver os números? Digite `/esquentador`. Aparece um cartão com o tamanho do contexto, quanto custaria reaquecer frio, quanto custa cada aquecimento e quantos aquecimentos custam o mesmo que um reaquecimento frio.
+
+![Simulação: o cartão do comando /esquentador, com o estado, o contexto de 200.502 tokens, o custo de reaquecer frio (US$ 4,01) e quente (US$ 0,05) e quantos aquecimentos compensam](imagens/simulacao-cartao.png)
+
+*Simulação, com o texto exato do cartão para uma conversa de 200 mil tokens no Fable 5.1.*
 
 Comandos:
 
