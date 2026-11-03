@@ -1,7 +1,7 @@
 // eleazar-esquenta-secao: the cache-tax mod (karanb192/cache-tax at e4940af) with its state in Portuguese under the prompt
 // (the footer entry in the desktop app, the hint line on the terminal), a live countdown to the next ping, and keepwarm on in
-// every session unless turned off. Its command is /esquentador.
-import type { EngineInterface, Register, TurnUsage } from 'claude-code'
+// every session unless turned off. Its commands are /eleazar and one /eleazar-<option> per option.
+import type { CommandSpec, EngineInterface, Register, TurnUsage } from 'claude-code'
 
 const TTL_MS = 60 * 60 * 1000
 // The hint line counts in whole minutes, and redraws when the minute it shows changes.
@@ -278,7 +278,7 @@ export type Hint = { icon: string; label: string; detail: string }
 
 /** The state in a person's words: an icon, a few bold words and what comes next. The hint line draws it in every state. */
 export function hint(s: State, now: number): Hint {
-  const back = s.always ? 'volta depois da sua próxima mensagem' : '/esquentador ligar para religar'
+  const back = s.always ? 'volta depois da sua próxima mensagem' : '/eleazar-ligar para religar'
   if (s.stopped) return { icon: '⚠️', label: 'esquentador parou', detail: `${s.stopped}; ${back}` }
   const open = s.deadline > now
   if (open && shortTtl(s)) return { icon: '⏸️', label: 'esquentador pausado', detail: 'o cache desta conta dura 5 min, e aquecer não segura' }
@@ -303,7 +303,7 @@ function statusText(s: State, now: number): string | undefined {
   return `${h.icon} ${h.label} · ${h.detail}`
 }
 
-/** /esquentador status: the footer's words with the window's end and the last ping's figure. */
+/** /eleazar-status: the footer's words with the window's end and the last ping's figure. */
 function statusLine(s: State, now: number): string | undefined {
   const text = statusText(s, now)
   if (!text || s.stopped || !(s.deadline > now)) return text
@@ -428,7 +428,7 @@ async function endConversation($: EngineInterface, s: State, reason: 'clear' | '
   s.sid = ''
   s.endingSid = ending
   // /clear ends the conversation the window was armed for. A resume carries the window on to the next one, under its
-  // id: the old id's keys go here, or a /esquentador desligar there could never find them and the old session would re-arm them.
+  // id: the old id's keys go here, or an /eleazar-desligar there could never find them and the old session would re-arm them.
   if (reason === 'clear') {
     s.deadline = 0
     s.every = PING_AFTER_MS
@@ -623,7 +623,7 @@ function observeTtl($: EngineInterface, s: State, u: TurnUsage, gap: number, pre
   if (u.cache_creation_input_tokens >= 0.5 * prevCtx) setTtl($, s, SHORT_TTL_MS, 'observed', `uma mensagem ${after} depois da anterior escreveu o contexto de novo`)
 }
 
-// An /esquentador desligar after `offs` was read wins: the window it cancelled is not written back. A caller that awaited
+// An /eleazar-desligar after `offs` was read wins: the window it cancelled is not written back. A caller that awaited
 // before deciding to open a window passes the count it read first.
 async function startWindow($: EngineInterface, s: State, windowMs: number, every: number, offs = s.offs) {
   if (s.offs !== offs) return
@@ -664,13 +664,13 @@ function card(s: State, now: number): string {
   lines.push(`Contexto: ${milhar(s.ctx)} tokens`)
   lines.push(`Reaquecer frio: ${dolar(coldUsd(s))} para reescrever tudo (com o cache quente, ${dolar(warmUsd(s))})`)
   const window = s.deadline > now ? `ligado, janela por mais ${tempo(s.deadline - now)}` : s.stopped ? `parou: ${s.stopped}` : s.always ? 'ligado, começa depois da sua próxima mensagem' : 'desligado'
-  lines.push(`Esquentador: ${window}${s.always ? ', em toda sessão (/esquentador desligar desliga de vez)' : ' (/esquentador ligar liga em toda sessão)'}`)
+  lines.push(`Esquentador: ${window}${s.always ? ', em toda sessão (/eleazar-desligar desliga de vez)' : ' (/eleazar-ligar liga em toda sessão)'}`)
   if (s.last) lines.push(`Último aquecimento: leu ${fmtTok(s.last.read)} tokens, ${dolar(s.last.usd)}`)
   const pings = breakEvenPings(s)
   if (pings != null) lines.push(`Compensa: até ${pings} aquecimentos custam o mesmo que um reaquecimento frio, cerca de ${tempo(pings * s.every)} parado com um a cada ${tempo(s.every)}`)
   const mode = s.guard === 'refuse' ? 'segura a mensagem uma vez' : 'só avisa'
-  const other = s.guard === 'refuse' ? '/esquentador aviso avisar só mostra o preço' : '/esquentador aviso segurar para a mensagem uma vez'
-  lines.push(`Aviso: ${mode} a partir de ${dolar(s.guardMin)} de reescrita (${other}; /esquentador aviso 2 muda o piso)`)
+  const other = s.guard === 'refuse' ? '/eleazar-aviso-avisar só mostra o preço' : '/eleazar-aviso-segurar para a mensagem uma vez'
+  lines.push(`Aviso: ${mode} a partir de ${dolar(s.guardMin)} de reescrita (${other}; /eleazar-aviso-valor 2 muda o piso)`)
   const paid = s.misses.reduce((a, m) => a + (m.usd ?? 0), 0)
   const n = s.misses.length
   lines.push(`Sessão: ${n} ${n === 1 ? 'reescrita fria paga' : 'reescritas frias pagas'}, ${dolar(paid)}`)
@@ -685,6 +685,71 @@ async function warnIfOld($: EngineInterface, s: State) {
   if (!names.some(n => n === 'keepwarm' || n === 'cache-tax' || n === 'cache-tax:status')) return
   s.oldWarned = true
   $.ui.log('o cache-tax também está instalado, então cada pausa recebe dois avisos e dois aquecimentos. Desinstale o cache-tax: o esquentador já faz o que ele fazia.')
+}
+
+// One command per option, all starting with /eleazar, so typing /eleazar lists every option with its line.
+export const COMMANDS: CommandSpec[] = [
+  { name: 'eleazar', description: 'Eleazar, o esquenta-sessão: o estado do cache e os preços' },
+  { name: 'eleazar-ligar', description: 'Liga o Eleazar nesta sessão e nas próximas' },
+  { name: 'eleazar-desligar', description: 'Desliga o Eleazar nesta sessão e nas próximas' },
+  { name: 'eleazar-status', description: 'O estado do Eleazar numa linha só' },
+  { name: 'eleazar-janela', description: 'Mantém o cache quente por uma janela de tempo', argumentHint: '[90m | 2h] [a cada 2m]' },
+  { name: 'eleazar-aviso-avisar', description: 'A mensagem com o cache frio passa, com o preço mostrado (o padrão)' },
+  { name: 'eleazar-aviso-segurar', description: 'A mensagem com o cache frio é segurada uma vez; mandou de novo, ela passa' },
+  { name: 'eleazar-aviso-valor', description: 'A partir de quantos dólares de reescrita o aviso aparece (o padrão é 1)', argumentHint: '[dólares, como 2 ou 2,50]' },
+]
+
+const USAGE = 'comandos do Eleazar: /eleazar (o estado e os preços), /eleazar-ligar, /eleazar-desligar, /eleazar-status, /eleazar-janela 90m, /eleazar-aviso-avisar, /eleazar-aviso-segurar e /eleazar-aviso-valor 2'
+
+export function words(args: string | undefined): string[] {
+  return String(args ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
+}
+
+// Every /eleazar command lands here as words: /eleazar-desligar as "desligar", /eleazar-aviso-valor 2 as "aviso 2". /eleazar
+// itself still takes them typed out after it.
+async function runCommand($: EngineInterface, s: State, words: string[]): Promise<{ text: string }> {
+  await reseat($, s)
+  const now = await $.clock.now()
+  if (!words.length) return { text: card(s, now) }
+  if (words[0] === 'desligar') {
+    const wasAlways = s.always
+    await stop($, s, null, true)
+    return { text: wasAlways ? 'esquentador desligado, nesta e nas próximas sessões, a partir da próxima mensagem de cada uma. /eleazar-ligar religa.' : 'esquentador desligado' }
+  }
+  if (words[0] === 'ligar') {
+    s.always = true
+    await $.store.set(KEY_ALWAYS, true)
+    await $.store.delete(KEY_OFF)
+    await startWindow($, s, DEFAULT_WINDOW_MS, PING_AFTER_MS)
+    const cold = shortTtl(s) ? `. Mas está ${pausedText(s)}` : isCold(s, now) ? `. ${coldNowText(s)}` : ''
+    return { text: `esquentador ligado em toda sessão: o cache fica quente até ${tempo(DEFAULT_WINDOW_MS)} depois da última mensagem; /eleazar-desligar desliga de vez${cold}` }
+  }
+  if (words[0] === 'status') return { text: statusLine(s, now) ?? 'esquentador desligado' }
+  if (words[0] === 'aviso') {
+    if (words[1] === 'avisar' || words[1] === 'segurar') {
+      s.guard = words[1] === 'segurar' ? 'refuse' : 'warn'
+      await $.store.set(KEY_GUARD, s.guard)
+      return { text: s.guard === 'refuse' ? 'aviso em segurar: uma mensagem com o cache frio é segurada uma vez com o preço, e o reenvio passa' : 'aviso em avisar: a mensagem com o cache frio passa, com o preço mostrado' }
+    }
+    const m = /^(?:us)?\$?(\d+(?:[.,]\d+)?)$/.exec(words[1] ?? '')
+    if (!m) return { text: 'diga o valor em dólares, como /eleazar-aviso-valor 2 ou /eleazar-aviso-valor 2,50' }
+    s.guardMin = Number(m[1].replace(',', '.'))
+    await $.store.set(KEY_GUARD_MIN, s.guardMin)
+    return { text: `o aviso agora aparece quando reaquecer o cache frio custaria ${dolar(s.guardMin)} ou mais` }
+  }
+  const window = parseDuration(words[0])
+  if (!window) return { text: USAGE }
+  // "a cada 2m" is a testing knob and lasts only for the window it was given with.
+  let every = PING_AFTER_MS
+  if (words[1] === 'a' && words[2] === 'cada') {
+    const period = parseDuration(words[3] ?? '')
+    // A period of the cache's whole hour or more would fire only once the cache is already cold.
+    if (period == null || period < MIN_PING_MS || period >= TTL_MS) return { text: '"a cada" aceita um período de 1m a 59m' }
+    every = period
+  }
+  await startWindow($, s, window, every)
+  const rolls = s.always && (window < DEFAULT_WINDOW_MS || every !== PING_AFTER_MS)
+  return { text: armedText(s, now, window) + (rolls ? `. Como está ligado em toda sessão, a sua próxima mensagem estica para pelo menos ${tempo(DEFAULT_WINDOW_MS)}, com um aquecimento a cada ${tempo(PING_AFTER_MS)}` : '') }
 }
 
 export function freshState(): State {
@@ -735,12 +800,7 @@ export const register: Register = on => {
     if (s.always) await startWindow($, s, DEFAULT_WINDOW_MS, PING_AFTER_MS)
     // The classic start arms a restored window too, but a managed plugin above this tier may continue beneath it; arming twice leaves one timer.
     else if (s.deadline) await arm($, s)
-    await $.command.register({
-      name: 'esquentador',
-      description: 'Esquentador do cache: o estado e o preço; ligar, desligar, uma janela como 90m, ou aviso avisar|segurar|<dólares>',
-      argumentHint: '[ligar | desligar | 90m | aviso avisar | aviso segurar | aviso 2]',
-      immediate: true,
-    })
+    for (const c of COMMANDS) await $.command.register({ ...c, immediate: true })
     await warnIfOld($, s)
     updateStatus($, s, now)
     return r
@@ -773,51 +833,17 @@ export const register: Register = on => {
     return r
   })
 
-  on('command.run', { command: 'esquentador' }, async ($, e) => {
-    await reseat($, s)
-    const words = String(e.args ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
-    const now = await $.clock.now()
-    if (!words.length) return { text: card(s, now) }
-    if (words[0] === 'desligar') {
-      const wasAlways = s.always
-      await stop($, s, null, true)
-      return { text: wasAlways ? 'esquentador desligado, nesta e nas próximas sessões, a partir da próxima mensagem de cada uma. /esquentador ligar religa.' : 'esquentador desligado' }
-    }
-    if (words[0] === 'ligar') {
-      s.always = true
-      await $.store.set(KEY_ALWAYS, true)
-      await $.store.delete(KEY_OFF)
-      await startWindow($, s, DEFAULT_WINDOW_MS, PING_AFTER_MS)
-      const cold = shortTtl(s) ? `. Mas está ${pausedText(s)}` : isCold(s, now) ? `. ${coldNowText(s)}` : ''
-      return { text: `esquentador ligado em toda sessão: o cache fica quente até ${tempo(DEFAULT_WINDOW_MS)} depois da última mensagem; /esquentador desligar desliga de vez${cold}` }
-    }
-    if (words[0] === 'status') return { text: statusLine(s, now) ?? 'esquentador desligado' }
-    if (words[0] === 'aviso') {
-      if (words[1] === 'avisar' || words[1] === 'segurar') {
-        s.guard = words[1] === 'segurar' ? 'refuse' : 'warn'
-        await $.store.set(KEY_GUARD, s.guard)
-        return { text: s.guard === 'refuse' ? 'aviso em segurar: uma mensagem com o cache frio é segurada uma vez com o preço, e o reenvio passa' : 'aviso em avisar: a mensagem com o cache frio passa, com o preço mostrado' }
-      }
-      const m = /^(?:us)?\$?(\d+(?:[.,]\d+)?)$/.exec(words[1] ?? '')
-      if (!m) return { text: '/esquentador aviso aceita avisar, segurar ou um valor em dólares, como 1 ou 2,50' }
-      s.guardMin = Number(m[1].replace(',', '.'))
-      await $.store.set(KEY_GUARD_MIN, s.guardMin)
-      return { text: `o aviso agora aparece quando reaquecer o cache frio custaria ${dolar(s.guardMin)} ou mais` }
-    }
-    const window = parseDuration(words[0])
-    if (!window) return { text: '/esquentador aceita: nada (mostra o estado), ligar, desligar, uma janela como 90m ou 2h, ou aviso avisar|segurar|<dólares>' }
-    // "a cada 2m" is a testing knob and lasts only for the window it was given with.
-    let every = PING_AFTER_MS
-    if (words[1] === 'a' && words[2] === 'cada') {
-      const period = parseDuration(words[3] ?? '')
-      // A period of the cache's whole hour or more would fire only once the cache is already cold.
-      if (period == null || period < MIN_PING_MS || period >= TTL_MS) return { text: '"a cada" aceita um período de 1m a 59m' }
-      every = period
-    }
-    await startWindow($, s, window, every)
-    const rolls = s.always && (window < DEFAULT_WINDOW_MS || every !== PING_AFTER_MS)
-    return { text: armedText(s, now, window) + (rolls ? `. Como está ligado em toda sessão, a sua próxima mensagem estica para pelo menos ${tempo(DEFAULT_WINDOW_MS)}, com um aquecimento a cada ${tempo(PING_AFTER_MS)}` : '') }
+  on('command.run', { command: 'eleazar' }, ($, e) => runCommand($, s, words(e.args)))
+  on('command.run', { command: 'eleazar-ligar' }, $ => runCommand($, s, ['ligar']))
+  on('command.run', { command: 'eleazar-desligar' }, $ => runCommand($, s, ['desligar']))
+  on('command.run', { command: 'eleazar-status' }, $ => runCommand($, s, ['status']))
+  on('command.run', { command: 'eleazar-janela' }, ($, e) => {
+    const w = words(e.args)
+    return w.length && parseDuration(w[0]) ? runCommand($, s, w) : { text: 'diga o tamanho da janela, como /eleazar-janela 90m ou /eleazar-janela 2h' }
   })
+  on('command.run', { command: 'eleazar-aviso-avisar' }, $ => runCommand($, s, ['aviso', 'avisar']))
+  on('command.run', { command: 'eleazar-aviso-segurar' }, $ => runCommand($, s, ['aviso', 'segurar']))
+  on('command.run', { command: 'eleazar-aviso-valor' }, ($, e) => runCommand($, s, ['aviso', ...words(e.args).slice(0, 1)]))
 
   // The message that pays. Only its first character is read.
   on('prompt.submit', async ($, e, next) => {
@@ -908,7 +934,7 @@ export const register: Register = on => {
     // Always covers any break up to six hours after a turn that reached the cache (a turn that failed before any
     // response touched nothing, and its cache may be cold): a window of at least six hours at the default period,
     // which brings back a stopped window and replaces a shorter one or a testing period. Another session's
-    // /esquentador desligar or ligar changes the shared switch, so every such turn reads it.
+    // /eleazar-desligar or /eleazar-ligar changes the shared switch, so every such turn reads it.
     if (e.usage) {
       await warnIfOld($, s)
       const shared = await alwaysOn($)
@@ -940,7 +966,7 @@ export const register: Register = on => {
         const extend = !shortTtl(s) && s.deadline < now + AUTO_WARM_MS && s.offs === offs
         if (extend) await startWindow($, s, AUTO_WARM_MS, s.every, offs)
         $.ui.log(`reescrita fria de ${fmtTok(write)} tokens paga (${dolar(usd)}).` +
-          (extend ? ` Mantendo o cache quente por ${tempo(AUTO_WARM_MS)} para não pagar de novo hoje; /esquentador desligar para parar.` : ''))
+          (extend ? ` Mantendo o cache quente por ${tempo(AUTO_WARM_MS)} para não pagar de novo hoje; /eleazar-desligar para parar.` : ''))
       }
     }
     s.coldWritePending = false

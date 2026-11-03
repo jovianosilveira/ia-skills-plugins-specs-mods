@@ -24,7 +24,7 @@ const turn = (over: Partial<AnsweredTurn> = {}): TurnCompleteInput => ({
 })
 
 const run = (args: string): CommandRunInput => ({
-  command: 'esquentador', args, origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 },
+  command: 'eleazar', args, origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 },
 })
 
 const prompt = (text: string): PromptSubmitInput => ({ text, wait: false, origin: { kind: 'composer' } })
@@ -59,7 +59,8 @@ function world(on: On, forkAnswers: ForkAnswer[], opts: { store?: Map<string, un
   on('session.id', () => ({ value: typeof opts.sid === 'function' ? opts.sid() : opts.sid ?? 'S1' }))
   on('session.model', () => ({ value: (typeof opts.model === 'function' ? opts.model() : opts.model) ?? 'claude-fable-5-1' }))
   on('session.usage', () => ({ value: { startedAt: opts.startedAt?.() ?? START, context: { window: 1000000, tokens: opts.live?.tokens }, rateLimits: [] } }))
-  on('command.register', ($, e) => ({ value: { command: e.name } }))
+  const registered: string[] = []
+  on('command.register', ($, e) => { registered.push(e.name); return { value: { command: e.name } } })
   on('command.list', () => ({ value: (opts.commands ?? []).map(name => ({ name, description: '', source: 'plugin' as const })) }))
   on('turn.complete', ($, e) => ({ text: e.answer }))
   on('turn.step', async function* ($, e) {
@@ -83,7 +84,7 @@ function world(on: On, forkAnswers: ForkAnswer[], opts: { store?: Map<string, un
     const value: ModelForkResult = { isAnswered: true, text: 'warm', usage: { input_tokens: a.input ?? 2, output_tokens: a.out ?? 1, cache_read_input_tokens: a.read, cache_creation_input_tokens: a.write } }
     return { value }
   })
-  return { forks, status, logs, entered }
+  return { forks, status, logs, entered, registered }
 }
 
 const warm: ForkAnswer = { read: 200000, write: 0 }
@@ -549,7 +550,7 @@ describe('keepwarm', () => {
     const card = await $.command.run(run(''))
     expect(card.text).toMatch(/Esquentador: ligado, janela por mais 5 h 10 min, em toda sessão[\s\S]*Último aquecimento: leu 200k tokens, US\$ 0,05/)
     const off = await $.command.run(run('desligar'))
-    expect(off.text).toBe('esquentador desligado, nesta e nas próximas sessões, a partir da próxima mensagem de cada uma. /esquentador ligar religa.')
+    expect(off.text).toBe('esquentador desligado, nesta e nas próximas sessões, a partir da próxima mensagem de cada uma. /eleazar-ligar religa.')
     expect(store.has('always')).toBe(false)
     expect(w.status.at(-1)).toBe(undefined)
   })
@@ -680,7 +681,7 @@ describe('keepwarm', () => {
     await clock.advance(1 * MIN)
     expect(w.forks.length).toBe(0)
     const r = await $.command.run(run('ligar'))
-    expect(r.text).toBe('esquentador ligado em toda sessão: o cache fica quente até 6 h depois da última mensagem; /esquentador desligar desliga de vez. O cache está frio agora, então o primeiro aquecimento vem 50 min depois da sua próxima mensagem')
+    expect(r.text).toBe('esquentador ligado em toda sessão: o cache fica quente até 6 h depois da última mensagem; /eleazar-desligar desliga de vez. O cache está frio agora, então o primeiro aquecimento vem 50 min depois da sua próxima mensagem')
     await clock.advance(60 * MIN)
     expect(w.forks.length).toBe(0)
     await $.turn.complete(turn())
@@ -885,7 +886,7 @@ describe('keepwarm input', () => {
       world(on, [])
       await $.session.start(session)
       const r = await $.command.run(run(args))
-      expect(r.text).toBe('/esquentador aceita: nada (mostra o estado), ligar, desligar, uma janela como 90m ou 2h, ou aviso avisar|segurar|<dólares>')
+      expect(r.text).toBe('comandos do Eleazar: /eleazar (o estado e os preços), /eleazar-ligar, /eleazar-desligar, /eleazar-status, /eleazar-janela 90m, /eleazar-aviso-avisar, /eleazar-aviso-segurar e /eleazar-aviso-valor 2')
     })
   }
 
@@ -1010,7 +1011,7 @@ describe('ping failures', () => {
     await $.command.run(run('3h'))
     await clock.advance(57 * MIN)
     expect(w.forks.length).toBe(4)
-    expect(w.status.at(-1)).toBe('⚠️ esquentador parou · a API recusou o aquecimento (429), depois de 3 tentativas; /esquentador ligar para religar')
+    expect(w.status.at(-1)).toBe('⚠️ esquentador parou · a API recusou o aquecimento (429), depois de 3 tentativas; /eleazar-ligar para religar')
     await clock.advance(2 * HOUR)
     expect(w.forks.length).toBe(4)
   })
@@ -1023,7 +1024,7 @@ describe('ping failures', () => {
     await $.command.run(run('3h a cada 58m'))
     await clock.advance(58 * MIN)
     expect(w.forks.length).toBe(1)
-    expect(w.status.at(-1)).toBe('⚠️ esquentador parou · a API recusou o aquecimento (429); /esquentador ligar para religar')
+    expect(w.status.at(-1)).toBe('⚠️ esquentador parou · a API recusou o aquecimento (429); /eleazar-ligar para religar')
   })
 })
 
@@ -1106,7 +1107,7 @@ describe('stale and late ping results', () => {
     timers.at(-1)?.()
     await settle()
     expect(w.forks.length).toBe(1)
-    expect(w.status.at(-1)).toBe('⚠️ esquentador parou · a API recusou o aquecimento (429), depois de 1 tentativa; /esquentador ligar para religar')
+    expect(w.status.at(-1)).toBe('⚠️ esquentador parou · a API recusou o aquecimento (429), depois de 1 tentativa; /eleazar-ligar para religar')
   })
 })
 
@@ -2285,11 +2286,11 @@ describe('dollar guard', () => {
     const store = new Map<string, unknown>()
     world(on, [], { store, shipped: true })
     await $.session.start(session)
-    expect((await $.command.run(run('aviso lots'))).text).toMatch(/aceita avisar, segurar ou um valor em dólares/)
+    expect((await $.command.run(run('aviso lots'))).text).toMatch(/^diga o valor em dólares/)
     expect((await $.command.run(run('aviso $2.50'))).text).toMatch(/US\$ 2,50 ou mais/)
     expect(store.get('guardMin')).toBe(2.5)
     expect(store.has('guard')).toBe(false)
-    expect((await $.command.run(run('aviso'))).text).toMatch(/aceita avisar, segurar ou um valor em dólares/)
+    expect((await $.command.run(run('aviso'))).text).toMatch(/^diga o valor em dólares/)
   })
 
   test('a saved floor and mode are read back at session start', async ($, on) => {
@@ -2399,5 +2400,52 @@ describe('cache lifetime', () => {
     await clock.advance(12 * MIN)
     await step($, 'switched', 'claude-opus-5-5')
     expect(w.logs).toEqual([])
+  })
+})
+
+describe('commands under /eleazar', () => {
+  const cmd = (command: string, args = ''): CommandRunInput => ({ ...run(args), command })
+
+  test('typing /eleazar lists one command per option', async ($, on) => {
+    mock.clock(on, { now: START })
+    const w = world(on, [], { shipped: true })
+    await $.session.start(session)
+    expect(w.registered).toEqual(['eleazar', 'eleazar-ligar', 'eleazar-desligar', 'eleazar-status', 'eleazar-janela', 'eleazar-aviso-avisar', 'eleazar-aviso-segurar', 'eleazar-aviso-valor'])
+  })
+
+  test('each option runs as its own command', async ($, on) => {
+    mock.clock(on, { now: START })
+    const store = new Map<string, unknown>()
+    world(on, [], { shipped: true, store })
+    await $.session.start(session)
+    await $.turn.complete(turn())
+    expect((await $.command.run(cmd('eleazar'))).text).toMatch(/^🔥 quente · reaquece em 50 min\nModelo: claude-fable-5-1\n/)
+    expect((await $.command.run(cmd('eleazar-status'))).text).toBe('🔥 quente · reaquece em 50 min · janela por mais 6 h')
+    expect((await $.command.run(cmd('eleazar-aviso-segurar'))).text).toMatch(/^aviso em segurar/)
+    expect(store.get('guard')).toBe('refuse')
+    expect((await $.command.run(cmd('eleazar-aviso-avisar'))).text).toMatch(/^aviso em avisar/)
+    expect(store.get('guard')).toBe('warn')
+    expect((await $.command.run(cmd('eleazar-aviso-valor', '2,50'))).text).toBe('o aviso agora aparece quando reaquecer o cache frio custaria US$ 2,50 ou mais')
+    expect(store.get('guardMin')).toBe(2.5)
+    expect((await $.command.run(cmd('eleazar-aviso-valor'))).text).toBe('diga o valor em dólares, como /eleazar-aviso-valor 2 ou /eleazar-aviso-valor 2,50')
+    expect((await $.command.run(cmd('eleazar-desligar'))).text).toMatch(/^esquentador desligado, nesta e nas próximas sessões/)
+    expect(store.get('off')).toBe(true)
+    expect((await $.command.run(cmd('eleazar-ligar'))).text).toMatch(/^esquentador ligado em toda sessão/)
+    expect(store.has('off')).toBe(false)
+  })
+
+  test('/eleazar-janela takes a size and nothing else', async ($, on) => {
+    const clock = mock.clock(on, { now: START })
+    const store = new Map<string, unknown>()
+    const w = world(on, [warm], { store })
+    await $.session.start(session)
+    await $.turn.complete(turn())
+    const ask = 'diga o tamanho da janela, como /eleazar-janela 90m ou /eleazar-janela 2h'
+    expect((await $.command.run(cmd('eleazar-janela'))).text).toBe(ask)
+    expect((await $.command.run(cmd('eleazar-janela', 'ligar'))).text).toBe(ask)
+    expect(store.get('always')).toBe(undefined)
+    expect((await $.command.run(cmd('eleazar-janela', '90m a cada 2m'))).text).toMatch(/^esquentador ligado por 1 h 30 min: depois de 2 min parado/)
+    await clock.advance(2 * MIN)
+    expect(w.forks.length).toBe(1)
   })
 })
