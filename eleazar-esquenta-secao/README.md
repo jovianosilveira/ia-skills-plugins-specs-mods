@@ -128,12 +128,22 @@ Eleazar era filho de Arão e sacerdote, e cuidava do azeite da luz do santuário
 
 ## De onde veio
 
-A mod parte do [cache-tax](https://github.com/karanb192/cache-tax), de Karan Bansal (licença MIT, versão e4940af). O que foi adaptado e criado aqui:
+A mod parte do [cache-tax](https://github.com/karanb192/cache-tax), de Karan Bansal (licença MIT). A ideia e o motor de aquecimento são dele. Lemos o código inteiro antes de usar e partimos de uma cópia travada na versão e4940af: uma mod roda código dentro do seu Claude Code, então nada entra aqui sem revisão.
 
-- descobre se o cache da conta vive 1 hora ou 5 minutos, pelas configurações e pelo que as próprias mensagens mostram, em vez de supor 1 hora;
-- o aviso vai por dólar (a partir de US$ 1) e só mostra o preço, em vez de barrar a mensagem;
-- vem ligada em toda sessão, sem precisar chamar nada;
-- o estado fica embaixo da caixa de mensagem, em português, com a contagem até o próximo aquecimento;
-- um comando só, `/esquentador`, em português.
+### O que foi corrigido
 
-O código e os 166 testes estão nesta pasta. Para rodar os testes: `claude plugin test eleazar-esquenta-secao`.
+- **O tempo de vida do cache.** O original supõe sempre 1 hora. Em contas com cache de 5 minutos (créditos, chave de API, provedor de nuvem), isso dava dois problemas. O preço da reescrita saía errado, porque a escrita de 5 minutos custa 1,25 vez o preço de entrada, e não 2 vezes. E o primeiro aquecimento, 50 minutos depois, já encontrava o cache morto e pagava a reescrita inteira, sem segurar nada. Agora a mod lê as configurações (`promptCacheTtl` e as variáveis de ambiente do cache) e confirma pelo que as próprias mensagens mostram: se, depois de uma pausa de 5 a 60 minutos, o contexto foi lido de volta, o cache é de 1 hora; se foi reescrito, é de 5 minutos. Com cache de 5 minutos, ela não aquece e só avisa o preço.
+- **O aviso barrava a mensagem.** No original, a primeira mensagem com o cache frio era descartada e você tinha que mandar de novo. Aqui o padrão é deixar passar mostrando o preço. Quem prefere ser barrado usa `/esquentador aviso segurar`.
+- **O aviso contava tokens, não dinheiro.** O original avisava a partir de 50 mil tokens de contexto, qualquer que fosse o modelo. Só que 50 mil tokens custam cerca de US$ 0,01 para reescrever no Haiku 5.5 e US$ 1,00 no Fable 5.1. Agora o aviso vai por dólar, a partir de US$ 1, e o piso muda com `/esquentador aviso <valor>`.
+- **No app desktop, a sessão nova abria sem sinal da mod.** O original só desenha o estado na tela quando a sessão se identifica como terminal ou desktop, e as sessões que o app desktop abre não se identificam assim. Nelas, o estado ia para a linha de status só enquanto o aquecimento estava armado, e ele vinha desligado. Agora o estado aparece desde o primeiro instante.
+
+### O que foi adaptado para a nossa realidade
+
+- **Português do Brasil em tudo:** a linha de estado, os avisos, o cartão e os comandos. Valores no formato daqui (US$ 4,01; 200.502 tokens) e tempos como a gente fala (38 min, 2 h 5 min, 3 dias).
+- **Um comando só, em português.** `/esquentador`, com `ligar`, `desligar`, `aviso` e `90m a cada 2m`. O original tem dois comandos em inglês, `/keepwarm` e `/cache-tax`.
+- **Ligado desde a instalação.** No original, o aquecimento só liga com `/keepwarm` (ou `/keepwarm always`). Aqui ele já vem ligado em toda sessão, e `/esquentador desligar` desliga de vez.
+- **Feito para o app desktop.** O estado fica na linha de status, ao lado do modelo, com ícone e uma contagem regressiva que anda sozinha, minuto a minuto. O cartão do `/esquentador` vem em linhas "Rótulo: valor", porque o app usa fonte proporcional e colunas alinhadas se desmancham.
+- **O cache frio vira preço na tela.** O original mostra que o cache esfriou. Aqui a linha diz quanto a próxima mensagem vai custar, antes de você mandar.
+- **Convive com o original sem cobrar em dobro.** Se o `cache-tax` também estiver instalado, a mod avisa: os dois juntos dão dois avisos e dois aquecimentos para a mesma pausa.
+
+Os testes do original continuam aqui, adaptados ao português, e cada correção e adaptação ganhou testes próprios: são 166 ao todo. Para rodar: `claude plugin test eleazar-esquenta-secao`.
